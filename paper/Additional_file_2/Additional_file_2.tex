@@ -11,6 +11,10 @@
 \usepackage{xr}
 \externaldocument[mainpaper:]{../kalis}
 
+\setcounter{figure}{0}
+\renewcommand{\figurename}{Fig.}
+\renewcommand{\thefigure}{S\arabic{figure}}
+
 \begin{document}
 \maketitle
 
@@ -515,7 +519,7 @@ Memory consumed: 724.13 kB
 
 Note that if this was a larger example, this would be an instance where the total compute time to reach \(\ell=250\) would be smaller by moving in this single function call, as opposed to making multiple calls to reach this variant.
 
-Now that \texttt{fwd} and \texttt{bck} are at the same variant, they can be combined to obtain \(p^\ell\) or \(d^\ell\), and the distance matrix plotted (see Figure \ref{fig:dist_mat_example} for output).
+Now that \texttt{fwd} and \texttt{bck} are at the same variant, they can be combined to obtain \(p^\ell\) or \(d^\ell\), and the distance matrix plotted (see Fig.\ref{fig:dist_mat_example} for output).
 
 %\begin{CodeChunk}
 \begin{verbatim}
