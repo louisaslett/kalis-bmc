@@ -222,7 +222,7 @@ Then the forward and backward recursions for the LS model can be written in vect
 with recursions initialised with \(\alpha_{\cdot i}^{1} \gets \theta^{1}_{\cdot i} \pi_{\cdot i}\) and \(\beta_{\cdot i}^{L} \gets 1\).
 Note that \Cref{eq:raw_forward} corresponds to Equation A5 in \cite{Li2213}.
 
-To partially mitigate the risk of underflow, the forward recursion can be rearranged in terms of \(\alpha_{\cdot i}^{\ell} := \frac{\tilde{\alpha}_{\cdot i}^{\ell}}{ F_i^{\ell-1}}\), and the backward recursion in terms of \(\beta_{\cdot i}^{\ell} := \frac{\tilde{\beta}_{\cdot i}^{\ell}}{G_i^{\ell}}\) (see the Appendix (Additional file 1) for details).
+To partially mitigate the risk of underflow, the forward recursion can be rearranged in terms of \(\alpha_{\cdot i}^{\ell} := \frac{\tilde{\alpha}_{\cdot i}^{\ell}}{ F_i^{\ell-1}}\), and the backward recursion in terms of \(\beta_{\cdot i}^{\ell} := \frac{\tilde{\beta}_{\cdot i}^{\ell}}{G_i^{\ell}}\) (see Additional file 1 for details).
 Thus, in full for \(\ell \in \{1,\dots,L\}\) we compute,
 \begin{align}
 	\alpha_{\cdot i}^{1} &\gets \theta^{1}_{\cdot i} \pi_{\cdot i} &\textrm{for} \quad \ell = 1 \label{eq:fwd0} \\
@@ -240,7 +240,7 @@ In the event that \(\sum\limits_j \alpha^\ell_{ji} \odot \beta^\ell_{ji} = 0\), 
 
 Finally, the local distances follow by taking the negative log and symmetrising.
 Note that if the distances are standardised for one of these columns, to account for the fact that the standard deviation will be 0, we set all of the standardised distances to 0.
-Please see the Appendix (Additional file 1) for a discussion on parameter values and exactly how \pkg{kalis} performs certain computations to maintain the numerical stability of the algorithm.
+Please see Additional file 1 for a discussion on parameter values and exactly how \pkg{kalis} performs certain computations to maintain the numerical stability of the algorithm.
 
 
 
@@ -254,7 +254,7 @@ Computationally, the innermost forward and backward recursions are implemented u
 AVX2 is supported in Intel CPUs of the Haswell generation (released Q2 of 2013) or later, AVX-512 tends to be available only in recent Intel server and workstation grade CPUs, and NEON is available for ARM Cortex-A and Cortex-R series CPUs, as well as Apple M1/M2 and Amazon Web Services Graviton processors.
 Although this covers most CPUs likely to be in use today, we none-the-less provide reference implementations in pure standards compliant \proglang{C} which will operate on any CPU architecture with a C18 compliant compiler.
 During package compilation, the correct code-paths are compiled based on detection of the presence or absence of the required instruction sets, or at the direction of the user via compiler flags.
-See the Appendix (Additional file 1) for more details, and for guidance on how to directly check your CPU for SIMD support.
+See Additional file 1 for more details, and for guidance on how to directly check your CPU for SIMD support.
 
 It may be worth noting at this juncture that it was an explicit design choice to target CPUs and not GPU or tensor cards initially.
 This is because most University high performance computing clusters have plentiful CPU resources, often with untapped power in advanced SIMD instructions sets.
@@ -508,7 +508,7 @@ We can also see some sub-structure within the clear haplotype blocks.
 \section*{Discussion}
 \label{sec:thepkg}
 
-In the User Guide (Additional file 2), we introduce the package from a user perspective, from package installation right through to decoding a single variant position in \proglang{R} using \pkg{kalis}.
+In Additional file 2, we introduce the package from a user perspective, from package installation right through to decoding a single variant position in \proglang{R} using \pkg{kalis}.
 
 There are many avenues for future research in developing \pkg{kalis}.
 On the model side, for example, allowing for different recombination rates between sub-populations as done in fastPHASE \cite{scheet2006fast} would be a natural extension.
