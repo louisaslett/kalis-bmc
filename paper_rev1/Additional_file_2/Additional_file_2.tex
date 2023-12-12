@@ -1,0 +1,628 @@
+\documentclass[a4paper]{article}
+
+\title{kalis: A Modern Implementation of the Li \& Stephens Model for Local Ancestry Inference in R \newline User Guide}
+\author{Louis~J.M.~Aslett~\&~Ryan~R.~Christ}
+\date{}
+\usepackage{amsthm,amsmath,amsfonts,cleveref,longtable,booktabs,graphicx,geometry}
+\let\proglang=\textsf
+\newcommand{\pkg}[1]{{\fontseries{m}\fontseries{b}\selectfont #1}}
+
+% Allow cross-referencing to other files ... NB requires the .aux file from that compile
+\usepackage{xr}
+\externaldocument[mainpaper:]{../kalis}
+
+\setcounter{figure}{0}
+\renewcommand{\figurename}{Fig.}
+\renewcommand{\thefigure}{S\arabic{figure}}
+
+\begin{document}
+\maketitle
+
+
+
+Here we introduce the package from a user perspective, from package installation right through to decoding a single variant position.
+\pkg{kalis} is an \proglang{R} package \cite{R}, with all time critical code developed in \proglang{C} \cite{C18} with extensive use of low-level SIMD instructions.
+These full technical details are presented in the main text for the interested reader, but from a user perspective these high performance implementation details are hidden behind a user-friendly API detailed below.
+
+
+
+\subsection*{Installing \pkg{kalis}}
+\label{sec:installing}
+
+\pkg{kalis} may be made available on CRAN in future, but users on MacOS and Windows would need to be aware that out of necessity any CRAN binary would be compiled for maximum compatibility, not maximum performance.
+We \emph{strongly} recommend compiling the package from source code if you plan to work with large haplotype sets (eg \(N > 1000\)).
+
+
+
+\subsubsection*{Compiling from source for maximum performance}
+\label{compiling-from-source-for-maximum-performance}
+
+To install directly from Github, compiling from source, it is easiest to use the \pkg{remotes} package \cite{remotes}.
+\emph{This is the	recommended installation method since bug fixes are pushed immediately to Github.}
+
+\begin{verbatim}
+remotes::install_github("louisaslett/kalis", configure.vars =
+        c(kalis = "PKG_CFLAGS='-march=native -mtune=native -O3'"))
+\end{verbatim}
+
+If the above installation command works correctly, the \texttt{PKG\_CFLAGS} setting will be reported back to you.
+In most cases, \pkg{kalis} will then be able to auto-detect the vector instruction set of your CPU and this will be reported too.
+For example, you would see the following near the start of the console output on a modern Intel CPU which supports AVX2:
+
+\begin{verbatim}
+Using PKG_CFLAGS=-march=native -mtune=native -O3
+Using PKG_LIBS=-lz
+AVX2 family of instruction set extensions will by used (auto-detected).
+\end{verbatim}
+
+If you have an error in passing the \texttt{PKG\_CFLAGS} setting, the first line will instead read:
+
+\begin{verbatim}
+Using PKG_CFLAGS=
+\end{verbatim}
+
+If auto-detection of the instruction set has failed (or if the \texttt{PKG\_CFLAGS} was not passed properly), then the third line will instead read:
+
+\begin{verbatim}
+No special assembly instruction set extensions will by used (auto-detected).
+\end{verbatim}
+
+It is possible to override the auto-detection and manually direct \pkg{kalis} which instruction set to use, please see the Appendix (Additional file 1) for details.
+
+Finally, when you load the \pkg{kalis} package, you will also receive a diagnostic message confirming the status of the compiled code.
+For example, the aforementioned Intel CPU compilation provides the following diagnostic on loading:
+
+%\begin{CodeChunk}
+%\begin{CodeInput}
+\begin{verbatim}
+R> library("kalis")
+\end{verbatim}
+%\end{CodeInput}
+%\begin{CodeOutput}
+
+\begin{verbatim}
+Running in 64-bit mode using x86-64 architecture.
+Loops unrolled to depth 4.
+Currently using AVX2, AVX, SSE4.1, SSE2, FMA and BMI2 CPU instruction set
+  extensions.
+\end{verbatim}
+%\end{CodeChunk}
+
+Advanced users should note that \pkg{kalis} will respect \texttt{CFLAGS} settings in \texttt{\textasciitilde{}/.R/Makevars}, so be alert to any compiler flags set there that may conflict with the above installation commands.
+Advanced users may also be interested to benchmark performance under different levels of loop unrolling: manually controlling this setting at compile time is described in the Appendix (Additional file 1).
+
+
+
+\subsection*{Package overview}
+\label{package-overview}
+
+In the \emph{v}1 release of \pkg{kalis} there are 18 functions which enable computation of the LS model.
+These are briefly summarised in \Cref{table:function_table}, grouped by the task under which the function falls.
+
+%\newpage
+
+%\begin{CodeChunk}
+\begin{longtable}{ll}
+	\toprule
+	\textbf{Function} & \textbf{Purpose} \\
+	\midrule
+	\multicolumn{2}{l}{\emph{Load and Inspect Haplotypes}} \\
+	\midrule
+	\texttt{CacheHaplotypes} & Reads haplotype data into internal \pkg{kalis} format \\
+	\texttt{CacheSummary} & Prints current state of the haplotype cache \\
+	\texttt{ClearHaplotypeCache} & Frees internal cache memory \\
+	\texttt{N} and \texttt{L} & Retrieve number of phased haplotypes, $N$, and sites, $L$ \\
+	\texttt{QueryCache} & Retrieve haplotypes from the internal memory cache \\
+	\midrule
+	\multicolumn{2}{l}{\emph{Initialise HMM}} \\
+	\midrule
+	\texttt{MakeBackwardTable} & Constructs $N \times N$ backward matrix for $N$ HMMs \\
+	\texttt{MakeForwardTable} & Constructs $N \times N$ forward matrix for $N$ HMMs \\
+	\texttt{Parameters} & Define LS model parameters $\rho, \mu, \Pi$ and compute options \\
+	\midrule
+	\multicolumn{2}{l}{\emph{HMM Propagation}} \\
+	\midrule
+	\texttt{Backward} & Executes the backward recursion of \Cref{mainpaper:eq:bck0,mainpaper:eq:bck1} \\
+	\texttt{Forward} & Executes the forward recursion of \Cref{mainpaper:eq:fwd0,mainpaper:eq:fwd1} \\
+	\midrule
+	\multicolumn{2}{l}{\emph{Decode HMM}} \\
+	\midrule
+	\texttt{DistMat} & Computes distances per \Cref{mainpaper:eq:distmat} \\
+	\texttt{PostProbs} & Compute posterior marginal probabilities, \Cref{mainpaper:eq:postprob} \\
+	\midrule
+	\multicolumn{2}{l}{\emph{Utilities}} \\
+	\midrule
+	\texttt{CalcRho} & Compute recombination probabilities, $\rho$, \Cref{mainpaper:eq:rho} \\
+	\texttt{CopyTable} & Creates a fully cloned (deep) copy of table \\
+	\texttt{ReadHaplotypes} & Load haplotypes from HDF5 format into an R object \\
+	\texttt{ResetTable} & Efficiently wipe a forward/backward table for reuse \\
+	\texttt{WriteHaplotypes} & Save haplotypes from binary R matrix into HDF5 format \\
+	\bottomrule
+	\caption{
+	  Exported \pkg{kalis} functions grouped by task.
+	  Equation numbers reference the main paper.
+	  See corresponding detailed help files in the package for argument and return value information.}
+	\label{table:function_table}
+\end{longtable}
+%\end{CodeChunk}
+
+Full details of these functions can be found in the package documentation, or at the package website, \texttt{https://kalis.louisaslett.com/}.
+
+In the remainder of this section we provide detailed comments on the steps involved in using \pkg{kalis} to compute the posterior marginal probabilities (\Cref{mainpaper:eq:postprob}) or distances (\Cref{mainpaper:eq:distmat}), with numerous pertinent asides to aid using the package efficiently.
+These steps are broken down as: (i) loading the haplotype data from \proglang{R} or disk; (ii) setting the model parameters \(\rho, \mu, \Pi\); (iii) initialising the \(N\) HMMs; (iv) running the forward/backward algorithms; (v) computing the posterior marginal probabilities and distances.
+
+
+
+\subsection*{Loading haplotype data}
+\label{sec:loadinghaps}
+
+In order to demonstrate how to use \pkg{kalis}, the package comes with a toy data set of 300 simulated haplotypes, \texttt{SmallHaps}.
+
+%\begin{CodeChunk}
+\begin{verbatim}
+R> library("kalis")
+\end{verbatim}
+\begin{verbatim}
+Running in 64-bit mode using x86-64 architecture.
+Loops unrolled to depth 4.
+Currently using AVX2, AVX, SSE4.1, SSE2, FMA and BMI2 CPU instruction set
+  extensions.
+\end{verbatim}
+\begin{verbatim}
+R> data("SmallHaps")
+\end{verbatim}
+%\end{CodeChunk}
+
+This simulated dataset is stored as an \(L = 400\) by \(N = 300\) matrix with binary entries, as can be seen by inspecting with \texttt{str()},
+
+%\begin{CodeChunk}
+\begin{verbatim}
+R> str(SmallHaps)
+\end{verbatim}
+\begin{verbatim}
+int [1:400, 1:300] 0 0 0 0 0 0 0 1 0 0 ...
+\end{verbatim}
+%\end{CodeChunk}
+
+In order to run the LS model, haplotype data must first be loaded into the internal optimised cache using the \texttt{CacheHaplotypes()} function.
+This function accepts an integer \proglang{R} matrix with $\{0,1\}$ entries in this form, but also supports loading from genetics file formats direct from disk (see next part).
+
+%\begin{CodeChunk}
+\begin{verbatim}
+R> CacheHaplotypes(SmallHaps)
+\end{verbatim}
+%\end{CodeChunk}
+
+The cache format is a raw binary representation that cannot be natively viewed in \proglang{R}.
+Therefore, there is a utility function, \texttt{QueryCache()}, to read all (or parts) of the cache into an \proglang{R} matrix representation, enabling inspection to ensure the data has loaded correctly.
+
+For example, we can confirm that the internal cache contains \texttt{SmallHaps} by retrieving summary information.
+With such a small matrix we can also use \texttt{QueryCache()} to retrieve the whole matrix from the internal cache (by passing no arguments), and demonstrate that all entries match.
+
+%\begin{CodeChunk}
+\begin{verbatim}
+R> CacheSummary()
+\end{verbatim}
+\begin{verbatim}
+Cache currently loaded with 300 haplotypes, each with 400 variants.
+Memory consumed: 25.60 kB.
+\end{verbatim}
+\begin{verbatim}
+R> all(QueryCache() == SmallHaps)
+\end{verbatim}
+\begin{verbatim}
+[1] TRUE
+\end{verbatim}
+%\end{CodeChunk}
+
+\texttt{QueryCache()} also supports retrieving just certain variants/haplotypes by providing a numeric vector of required variants/haplotypes respectively as the first two arguments (with standard \proglang{R} style \texttt{1} indexing), which is particularly useful when using \pkg{kalis} for very large problem sizes where the whole haplotype matrix is too big for \proglang{R}.
+Thus, the following code compares just the first 10 haplotypes at sites 42 and 54.
+
+%\begin{CodeChunk}
+\begin{verbatim}
+R> all(QueryCache(c(42, 54), 1:10) == SmallHaps[c(42, 54), 1:10])
+\end{verbatim}
+\begin{verbatim}
+[1] TRUE
+\end{verbatim}
+%\end{CodeChunk}
+
+Please note, it can be important to avoid mutations that appear on only a single haplotype (singletons) for numerical stability, see the Appendix (Additional file 1) for further discussion.
+
+At this juncture we are, in principle, ready to move to discuss setting parameters and then running the LS model.
+However, for practical real-world problems it is rare that one would choose to load the genetic data via an \proglang{R} matrix, so we first discuss supported file formats.
+
+
+
+\subsubsection*{Recommendations on loading haplotypes}
+\label{recommendations-on-loading-haplotypes}
+
+With real-world large haplotype data sets it is preferable to avoid having to load them into \proglang{R} at all, instead having \pkg{kalis} read directly from disk into the internal optimised cache.
+Therefore, \texttt{CacheHaplotypes()} also supports loading from two on-disk formats directly, bypassing loading into \proglang{R} at all.
+In both cases, a string containing the file name is passed, instead of an \proglang{R} matrix.
+
+Therefore, in all there are three supported methods for \texttt{CacheHaplotypes()} to load haplotype data:
+
+\begin{itemize}
+	\item
+	As already covered, directly from an \proglang{R} matrix with \texttt{0} and \texttt{1} entries.
+	The haplotypes should be stored in columns, with variants in rows.
+	Once loaded in the cache, the matrix can be safely removed from the \proglang{R} environment since it is internally stored in \pkg{kalis} in a more efficient format.
+	\item
+	From a \texttt{.hap.gz} file containing data in the HAP/LEGEND/SAMPLE format used by IMPUTE2 \cite{impute2} and SHAPEIT \cite{shapeit}.
+	\item
+	From an HDF5 file \cite{hdf5}, with the format described in the Appendix (Additional file 1).
+\end{itemize}
+
+To facilitate transforming from data in another format, \pkg{kalis} provides \texttt{WriteHaplotypes()} and \texttt{ReadHaplotypes()} to work with the HDF5 format.
+This means that one can loaded genetic data into an \proglang{R} matrix by other means and then save into the native on-disk format recommended for \pkg{kalis}.
+The advantage here is that once written to disk, the \proglang{R} session can be restarted to eliminate the inefficient matrix representation and the haplotypes loaded directly from HDF5 to the optimised internal cache.
+See the Appendix (Additional file 1) for full details.
+
+Finally, note that \pkg{kalis} will only cache and operate on one haplotype data set at a time, since the software is designed for operating at large scale.
+As a result, calling \texttt{CacheHaplotypes()} a second time frees the allocated cache memory and loads the new data set.
+Of course, there is no restriction in loading \pkg{kalis} in multiple separate \proglang{R} processes on the same machine, each caching different data sets.
+
+
+
+\subsection*{LS model parameters}
+\label{ls-model-parameters}
+
+Recall that the LS model is parametrised by \(\rho, \mu,\) and \(\Pi\).
+\pkg{kalis} bundles these parameters together into an environment of class \texttt{kalisParameters}, which can be created by using the \texttt{Parameters()} function.
+The three key arguments to \texttt{Parameters()} are:
+
+\begin{description}
+	\item[\(\rho =\) \texttt{rho}]
+	This is a numeric vector parameter which must have length \(L-1\).
+	Note that element \texttt{i} of this vector should be the recombination probability between variants \texttt{i} and \texttt{i+1}.
+
+	There is a utility function, \texttt{CalcRho()}, to assist with creating these recombination probabilities from a recombination map, described below.
+
+	By default, the recombination probabilities are set to zero everywhere.
+	\item[\(\mu =\) \texttt{mu}]
+	The mutation probabilities may be specified either as uniform across all variants (by providing a single scalar value), or may differ at each variant (by providing a vector of length \(L\)).
+
+	By default, mutation probabilities are set uniformly across variants to \(10^{-8}\).
+	\item[\(\Pi =\) \texttt{Pi}]
+	The original \cite{Li2213} model assumed that each haplotype has an equal prior probability of copying from any other.
+	However, in the spirit of ChromoPainter \cite{lawson2012inference} we allow a matrix of prior copying probabilities.
+
+	The copying probabilities may be specified as a standard \proglang{R} matrix of size \(N \times N\).
+	The element at row \texttt{j}, column \texttt{i} corresponds to the prior (background) probability that haplotype \texttt{i} copies from haplotype \texttt{j}.
+	Note that the diagonal \emph{must} by definition be zero and columns \emph{must} sum to one.
+
+	Alternatively, for uniform copying probabilities, this argument need not be specified, resulting in copying probability \(\frac{1}{N-1}\) between all distinct haplotypes by default.
+
+	\textbf{Note 1:} there is a computational cost associated with non-uniform copying probabilities, so it is recommended to leave the default of uniform probabilities when appropriate.
+	This is achieved by omitting this argument.
+
+	\textbf{Note 2:} do \emph{not} specify a uniform matrix when uniform probabilities are intended, since this would end up incurring the computational cost of non-uniform probabilities.
+\end{description}
+
+The \texttt{Parameters()} function accepts two further logical flag arguments, \texttt{use.speidel} (default \texttt{FALSE}) and \texttt{check.rho} (default \texttt{TRUE}).
+The former enables the asymmetric mutation model in RELATE \cite{speidel}, while the latter performs machine precision checks.
+
+Thus, to create the default parameter set (\(\rho^\ell = 0 \ \forall\,\ell\), \(\mu^\ell = 10^{-8} \ \forall\,\ell\), and \(\Pi_{ii} = 0 \ \forall\,i, \ \Pi_{ij} = (N-1)^{-1} \ \forall\,i \ne j\)) it suffices to simply call,
+
+%\begin{CodeChunk}
+\begin{verbatim}
+R> pars <- Parameters()
+R> pars
+\end{verbatim}
+\begin{verbatim}
+Parameters object with:
+rho   = (0, 0, 0, ..., 0, 0, 1)
+mu    = 1e-08
+Pi    = 0.00334448160535117
+\end{verbatim}
+%\end{CodeChunk}
+
+Since this continues the \texttt{SmallHaps} example started above, we see \((N-1)^{-1} = (300-1)^{-1} \approx 0.003344\).
+In particular, note that \texttt{Parameters()} can only be invoked \emph{after} the haplotype data is loaded by \texttt{CacheHaplotypes()} since \texttt{Parameters()} checks that the parameter specifications are consistent with the dimensionality of the haplotype data.
+
+Perhaps most common parameter not to leave at its default value is \texttt{rho}, since one may want to use a particular value of \(\rho\) based on a recombination map, according to \Cref{mainpaper:eq:rho}.
+\texttt{CalcRho()} helps with this, allowing the specification of a vector of recombination distances in centimorgans (argument \texttt{cM}), as well as the scalar multiple \(N_e\) and power \(\gamma\) (respectively arguments \texttt{s} and \texttt{gamma}, both defaulting to \texttt{1}), rather than having to specify \(\rho\) directly.
+Continuing the \texttt{SmallHaps} example, the package ships with a corresponding simulated recombination map in \texttt{SmallMap}.
+We can go from recombination map to recombination distances using \texttt{diff()} (and leave the default \(N_e\) and \(\gamma\)):
+
+%\begin{CodeChunk}
+\begin{verbatim}
+R> data("SmallMap")
+R> rho <- CalcRho(diff(SmallMap))
+R> pars <- Parameters(rho)
+R> pars
+\end{verbatim}
+\begin{verbatim}
+Parameters object with:
+rho   = (6.99999975500001e-08, 9.99999995000001e-09, 4.999999875e-08, ...,
+  3.99999992000053e-08, 1.39999990200002e-07, 1)
+mu    = 1e-08
+Pi    = 0.00334448160535117
+\end{verbatim}
+%\end{CodeChunk}
+
+
+
+\subsection*{Setting up the HMMs}
+\label{setting-up-the-hmms}
+
+At this point of the analysis pipeline, the haplotypes are loaded into the internal optimised cache, and the parameters for the LS model have been defined.
+The final step before running the forward/backward algorithm, is to setup the storage for the \(N\) independent HMM forward and backward probabilities, \(\alpha^\ell_{\cdot i}\) and \(\beta^\ell_{\cdot i}, i \in \{1, \dots, N\}\).
+
+\pkg{kalis} uses \(N \times N\) matrices wrapped in list objects which are of class \texttt{kalisForwardTable} and \texttt{kalisBackwardTable} respectively to store the forward/backward probabilities at a variant \(\ell\).
+These objects additionally contain which site, \(\ell\), the matrix represents and for performance reasons also retains the vector of \(N\) scaling constants associated with the \(N\) HMMs (corresponding to \Cref{mainpaper:eq:F} for the forward and \Cref{mainpaper:eq:G} for the backward).
+These objects can be created with \texttt{MakeForwardTable()} and \texttt{MakeBackwardTable()}, and at a minimum the parameters of the LS model to be used must be supplied.
+
+Hereinafter, we refer to the collective contents of these as the `forward table', `backward table', or simply `table'.
+
+Continuing the \texttt{SmallHaps} example,
+
+%\begin{CodeChunk}
+\begin{verbatim}
+R> fwd <- MakeForwardTable(pars)
+R> fwd
+\end{verbatim}
+\begin{verbatim}
+Full Forward Table object for 300 haplotypes.
+Newly created table, currently uninitialised to any variant (ready for
+  Forward function next).
+Memory consumed: 723.98 kB
+\end{verbatim}
+\begin{verbatim}
+R> bck <- MakeBackwardTable(pars)
+R> bck
+\end{verbatim}
+\begin{verbatim}
+Full Backward Table object for 300 haplotypes, in rescaled probability space.
+Newly created table, currently uninitialised to any variant (ready for
+  Backward function next).
+Memory consumed: 724.13 kB
+\end{verbatim}
+%\end{CodeChunk}
+
+These forward and backward tables of HMMs are now ready to be `propagated' along the genome.
+
+
+
+\subsection*{Running the LS model}
+\label{sec:runningls}
+
+Everything is in place now to run the LS model.
+The forward \cref{mainpaper:eq:fwd0,mainpaper:eq:fwd1}, and backward \cref{mainpaper:eq:bck0,mainpaper:eq:bck1}, can now be executed by using the \texttt{Forward()} and \texttt{Backward()} functions respectively.
+These must both, as a minimum, be supplied with a corresponding forward/backward table and with the parameters of the model (in each of the first two arguments, \texttt{fwd}/\texttt{bck} respectively and \texttt{pars}).
+By default this will result in a single variant move either forwards or backwards.
+Moves directly to a designated variant can be achieved by specifying the third argument (\texttt{t}).
+
+\textbf{Note:} that \pkg{kalis} seeks to minimize memory creation and copying for increased performance, and so the tables supplied to \texttt{Forward()} and \texttt{Backward()} \emph{are modified in place}.
+
+Continuing the \texttt{SmallHaps} example, we can see this in action, whereby the \texttt{fwd} table created in the previous subsection is propagated without assignment, first initialising to \(\ell=1\) with the first call to \texttt{Forward()}, then moving to \(\ell=2\) with the second call to \texttt{Forward()}:
+
+%\begin{CodeChunk}
+\begin{verbatim}
+R> Forward(fwd, pars)
+R> fwd
+\end{verbatim}
+\begin{verbatim}
+Full Forward Table object for 300 haplotypes.
+Current variant = 1
+Memory consumed: 723.98 kB
+\end{verbatim}
+\begin{verbatim}
+R> Forward(fwd, pars)
+R> fwd
+\end{verbatim}
+\begin{verbatim}
+Full Forward Table object for 300 haplotypes.
+Current variant = 2
+Memory consumed: 723.98 kB
+\end{verbatim}
+%\end{CodeChunk}
+
+Likewise we can propagate according to the backward equations:
+
+%\begin{CodeChunk}
+\begin{verbatim}
+R> Backward(bck, pars)
+R> bck
+\end{verbatim}
+\begin{verbatim}
+Full Backward Table object for 300 haplotypes, in rescaled probability space.
+Current variant = 400
+Memory consumed: 724.13 kB
+\end{verbatim}
+\begin{verbatim}
+R> Backward(bck, pars)
+R> bck
+\end{verbatim}
+\begin{verbatim}
+Full Backward Table object for 300 haplotypes, in rescaled probability space.
+Current variant = 399
+Memory consumed: 724.13 kB
+\end{verbatim}
+%\end{CodeChunk}
+
+
+
+\subsubsection*{In-place modification of tables}
+\label{in-place-modification-of-tables}
+
+A few additional comments on the in-place modification behaviour are in order since this is contrary to the idiomatic \proglang{R} style, where arguments are usually unaffected by function calls.
+The convention in \proglang{R} would typically be that if an argument is to be updated, it is copied inside the function and the modified copy returned: this would incur an unacceptably high performance penalty in many intended use cases for \pkg{kalis}, hence in place modification of the tables.
+Indeed, for particularly large \(N\) problems, it may only be possible to hold a few \(N \times N\) tables in memory at once so duplication is impossible.
+
+This has important knock-on ramifications if the user wishes to create a duplicate of the table, due to the copy-on-write semantics of \proglang{R}.
+As stated in the R Internals documentation \cite[\S1.1.2]{Rinternals}:
+
+\begin{quote}
+	``R has a `call by value' illusion, so an assignment like \texttt{b\ \textless{}-\ a} appears to make a copy of \texttt{a} and refer to it as \texttt{b}.
+	However, if neither \texttt{a} nor \texttt{b} are subsequently altered there is no need to copy.
+	{[}\ldots{]} When an object is about to be altered {[}\ldots{]} the object must be duplicated before being changed.''
+\end{quote}
+
+The low level in-place modification by \pkg{kalis} does not alert the \proglang{R} memory manager, meaning that a user who executes the following will have unexpected results:
+
+%\begin{CodeChunk}
+\begin{verbatim}
+R> fwd2 <- fwd
+R> Forward(fwd2, pars)
+\end{verbatim}
+%\end{CodeChunk}
+
+One might expect \texttt{fwd2} to now be 1 variant further advanced than \texttt{fwd}, but in fact both are references to the \emph{same} object, so both appear to have moved a variant.
+For this reason, \pkg{kalis} provides the \texttt{CopyTable()} function which is the only supported method of copying the content of a table.
+The order of arguments in \texttt{CopyTable()} is designed to mimic assignment, with the destination on the left.
+
+Again, in the interest of minimising functions which cause memory allocation, \texttt{CopyTable()} copies between \emph{existing} tables.
+Therefore to achieve the effect intended in the previous code snippet, the correct approach is to create a destination table and then copy:
+
+%\begin{CodeChunk}
+\begin{verbatim}
+R> fwd2 <- MakeForwardTable(pars)
+R> CopyTable(fwd2, fwd)
+R> Forward(fwd2, pars)
+\end{verbatim}
+%\end{CodeChunk}
+
+After these three lines are executed, \texttt{fwd2} will be a forward table propagated one variant further than \texttt{fwd}.
+
+
+
+\subsection*{Decoding a single variant}
+\label{decoding-a-single-variant}
+
+In practice, the objective of an analysis using the LS model is to propagate both a forward and backward table of \(N\) HMMs to a common variant \(\ell\), then compute the posterior marginal probabilities (\Cref{mainpaper:eq:postprob}) or distances (\Cref{mainpaper:eq:distmat}).
+
+Continuing our \texttt{SmallHaps} example, let us compute both quantities at \(\ell=250\).
+This is now straight-forward, as we first propagate directly to the destination \(\ell\),
+
+%\begin{CodeChunk}
+\begin{verbatim}
+R> Forward(fwd, pars, 250)
+R> Backward(bck, pars, 250)
+R> fwd
+\end{verbatim}
+\begin{verbatim}
+Full Forward Table object for 300 haplotypes.
+Current variant = 250
+Memory consumed: 723.98 kB
+\end{verbatim}
+\begin{verbatim}
+R> bck
+\end{verbatim}
+\begin{verbatim}
+Full Backward Table object for 300 haplotypes, in rescaled probability space.
+Current variant = 250
+Memory consumed: 724.13 kB
+\end{verbatim}
+%\end{CodeChunk}
+
+Note that if this was a larger example, this would be an instance where the total compute time to reach \(\ell=250\) would be smaller by moving in this single function call, as opposed to making multiple calls to reach this variant.
+
+Now that \texttt{fwd} and \texttt{bck} are at the same variant, they can be combined to obtain \(p^\ell\) or \(d^\ell\), and the distance matrix plotted (see Fig.\ref{fig:dist_mat_example} for output).
+
+%\begin{CodeChunk}
+\begin{verbatim}
+R> p <- PostProbs(fwd, bck)
+R> d <- DistMat(fwd, bck)
+R> plot(d)
+\end{verbatim}
+%\end{CodeChunk}
+
+\begin{figure}
+  \centering
+  \includegraphics{fig}
+	\caption{Distance Matrix produced by in the \texttt{Small Haps} example.}
+	\label{fig:dist_mat_example}
+\end{figure}
+
+
+
+\subsection*{Summary}
+\label{summary}
+
+This section has carefully walked through the pipeline involved in running \pkg{kalis} for the LS model.
+The following code is the full pipeline brought together for readability, without asides:
+
+%\begin{CodeChunk}
+\begin{verbatim}
+R> library("kalis")
+R> data("SmallHaps")
+R> data("SmallMap")
+R>
+R> CacheHaplotypes(SmallHaps)
+R>
+R> rho <- CalcRho(diff(SmallMap))
+R> pars <- Parameters(rho)
+R>
+R> fwd <- MakeForwardTable(pars)
+R> bck <- MakeBackwardTable(pars)
+R>
+R> Forward(fwd, pars, 250)
+R> Backward(bck, pars, 250)
+R>
+R> p <- PostProbs(fwd, bck)
+R> d <- DistMat(fwd, bck)
+\end{verbatim}
+%\end{CodeChunk}
+
+
+
+\subsection*{Advanced topics}
+\label{sec:advtopics}
+
+There are a couple of `advanced' topics worth mentioning which are available in the \pkg{kalis} API.
+
+
+
+\subsubsection*{Handling massive haplotype datasets}
+\label{handling-massive-haplotype-datasets}
+
+Firstly, in order to support massive haplotype sizes, it is possible when making a table to create only a window of recipients (ie for some subset of \(i \in \{1, \dots, N\}\)).
+The HMMs are all independent, so this facilitates propagating batches of columns of the full \(N \times N\) matrix of independent HMMs on different machines without requiring network communication.
+By default, \texttt{MakeForwardTable()} and \texttt{MakeBackwardTable()} will include all recipients, but a range can be specified with the arguments \texttt{from\_recipient} and \texttt{to\_recipient}.
+
+For example, in a problem where \(N = 100,000\), a single table would require just over 80GB of memory.
+If one were working with a cluster where machines only have 32GB of RAM each, then one might choose to work with batches of \(12,500\) recipients (ie columns) and propagate them independently on each machine, since a table then requires just over 10GB.
+For the forward table, this would be created by,
+
+%\begin{CodeChunk}
+\begin{verbatim}
+R> # Machine 1
+R> fwd <- MakeForwardTable(pars, 1, 12500)
+R> # Machine 2
+R> fwd <- MakeForwardTable(pars, 12501, 25000)
+R> # ...
+R> # Machine 8
+R> fwd <- MakeForwardTable(pars, 87501, 100000)
+\end{verbatim}
+%\end{CodeChunk}
+
+Likewise for the backward tables.
+All other operations are unaffected, from caching through to forward/backward propagation.
+
+Notice that the posterior probabilities and distance matrices are easily computed in a distributed manner, involving only a Hadamard product and single reduction operation, so that the final results can be computed entirely distributed without having to actually form a \(100,000 \times 100,000\) matrix in memory on a single machine.
+
+
+
+\subsubsection*{Fine control of parallelism}
+\label{fine-control-of-parallelism}
+
+Although the SIMD instruction set is fixed at compile time, as discussed above, the user can of course control the degree of threading at run-time.
+
+Both \texttt{Forward()} and \texttt{Backward()} functions accept an \texttt{nthreads} argument.
+By default this uses the core \proglang{R} \pkg{parallel} package to automatically detect the number of available cores and uses all of them.
+However, as is common in multi-threaded packages, the user can also specify a scalar value here to use a different degree of parallelism.
+
+There is a further option of interest to advanced users.
+If an integer vector is supplied, instead of a single scalar value, then \pkg{kalis} will attempt to pin threads to the corresponding core number, if the platform you are using supports thread affinity.
+This can be particularly useful on massive non-uniform memory access (NUMA) systems, where different cores have different speed of access to different parts of memory (cores are split over `nodes' and while they can access all memory, it will be faster to access memory on the same node).
+On a Linux system, any memory allocation will by preference try to be allocated on the same node as the core.
+Thus, an advanced user can opt to launch as many \proglang{R} processes as there are NUMA nodes and use \texttt{taskset} on Linux to pin one process to one core on each NUMA node.
+Then, by availing of the table recipient windowing described above, these tables memory allocations will be occur on the node local to each core.
+Finally, when calling \texttt{Forward()}/\texttt{Backward()}, a vector of only the cores on the corresponding NUMA node can be provided to \texttt{nthreads}, so that essentially all cross-NUMA node memory accesses are eliminated for maximum performance.
+
+\bibliographystyle{acm}
+\bibliography{../kalis}
+
+\end{document}
