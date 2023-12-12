@@ -1,4 +1,4 @@
 {
   "EbsOptimized": true,
-  "InstanceType": "c5.xlarge"
+  "InstanceType": "c5.metal"
 }
