@@ -1,0 +1,405 @@
+\documentclass[a4paper]{article}
+%DIF LATEXDIFF DIFFERENCE FILE
+%DIF DEL ../../paper_rev1/Additional_file_1/Additional_file_1.tex   Tue Dec 12 19:45:12 2023
+%DIF ADD ../../paper_rev2/Additional_file_1/Additional_file_1.tex   Mon Jan 22 17:57:16 2024
+
+\title{kalis: A Modern Implementation of the Li \& Stephens Model for Local Ancestry Inference in R \newline Appendix}
+\author{Louis~J.M.~Aslett~\&~Ryan~R.~Christ}
+\date{}
+\usepackage{amsthm,amsmath,amsfonts,cleveref,longtable,booktabs,graphicx,geometry}
+\let\proglang=\textsf
+\newcommand{\pkg}[1]{{\fontseries{m}\fontseries{b}\selectfont #1}}
+
+% Allow cross-referencing to other files ... NB requires the .aux file from that compile
+\usepackage{xr}
+\externaldocument{../kalis_diff}
+
+\usepackage[symbol*]{footmisc}
+%DIF PREAMBLE EXTENSION ADDED BY LATEXDIFF
+%DIF UNDERLINE PREAMBLE %DIF PREAMBLE
+\RequirePackage[normalem]{ulem} %DIF PREAMBLE
+\RequirePackage{color}\definecolor{RED}{rgb}{1,0,0}\definecolor{BLUE}{rgb}{0,0,1} %DIF PREAMBLE
+\providecommand{\DIFadd}[1]{{\protect\color{blue}\uwave{#1}}} %DIF PREAMBLE
+\providecommand{\DIFdel}[1]{{\protect\color{red}\sout{#1}}}                      %DIF PREAMBLE
+%DIF SAFE PREAMBLE %DIF PREAMBLE
+\providecommand{\DIFaddbegin}{} %DIF PREAMBLE
+\providecommand{\DIFaddend}{} %DIF PREAMBLE
+\providecommand{\DIFdelbegin}{} %DIF PREAMBLE
+\providecommand{\DIFdelend}{} %DIF PREAMBLE
+\providecommand{\DIFmodbegin}{} %DIF PREAMBLE
+\providecommand{\DIFmodend}{} %DIF PREAMBLE
+%DIF FLOATSAFE PREAMBLE %DIF PREAMBLE
+\providecommand{\DIFaddFL}[1]{\DIFadd{#1}} %DIF PREAMBLE
+\providecommand{\DIFdelFL}[1]{\DIFdel{#1}} %DIF PREAMBLE
+\providecommand{\DIFaddbeginFL}{} %DIF PREAMBLE
+\providecommand{\DIFaddendFL}{} %DIF PREAMBLE
+\providecommand{\DIFdelbeginFL}{} %DIF PREAMBLE
+\providecommand{\DIFdelendFL}{} %DIF PREAMBLE
+\newcommand{\DIFscaledelfig}{0.5}
+%DIF HIGHLIGHTGRAPHICS PREAMBLE %DIF PREAMBLE
+\RequirePackage{settobox} %DIF PREAMBLE
+\RequirePackage{letltxmacro} %DIF PREAMBLE
+\newsavebox{\DIFdelgraphicsbox} %DIF PREAMBLE
+\newlength{\DIFdelgraphicswidth} %DIF PREAMBLE
+\newlength{\DIFdelgraphicsheight} %DIF PREAMBLE
+% store original definition of \includegraphics %DIF PREAMBLE
+\LetLtxMacro{\DIFOincludegraphics}{\includegraphics} %DIF PREAMBLE
+\newcommand{\DIFaddincludegraphics}[2][]{{\color{blue}\fbox{\DIFOincludegraphics[#1]{#2}}}} %DIF PREAMBLE
+\newcommand{\DIFdelincludegraphics}[2][]{% %DIF PREAMBLE
+\sbox{\DIFdelgraphicsbox}{\DIFOincludegraphics[#1]{#2}}% %DIF PREAMBLE
+\settoboxwidth{\DIFdelgraphicswidth}{\DIFdelgraphicsbox} %DIF PREAMBLE
+\settoboxtotalheight{\DIFdelgraphicsheight}{\DIFdelgraphicsbox} %DIF PREAMBLE
+\scalebox{\DIFscaledelfig}{% %DIF PREAMBLE
+\parbox[b]{\DIFdelgraphicswidth}{\usebox{\DIFdelgraphicsbox}\\[-\baselineskip] \rule{\DIFdelgraphicswidth}{0em}}\llap{\resizebox{\DIFdelgraphicswidth}{\DIFdelgraphicsheight}{% %DIF PREAMBLE
+\setlength{\unitlength}{\DIFdelgraphicswidth}% %DIF PREAMBLE
+\begin{picture}(1,1)% %DIF PREAMBLE
+\thicklines\linethickness{2pt} %DIF PREAMBLE
+{\color[rgb]{1,0,0}\put(0,0){\framebox(1,1){}}}% %DIF PREAMBLE
+{\color[rgb]{1,0,0}\put(0,0){\line( 1,1){1}}}% %DIF PREAMBLE
+{\color[rgb]{1,0,0}\put(0,1){\line(1,-1){1}}}% %DIF PREAMBLE
+\end{picture}% %DIF PREAMBLE
+}\hspace*{3pt}}} %DIF PREAMBLE
+} %DIF PREAMBLE
+\LetLtxMacro{\DIFOaddbegin}{\DIFaddbegin} %DIF PREAMBLE
+\LetLtxMacro{\DIFOaddend}{\DIFaddend} %DIF PREAMBLE
+\LetLtxMacro{\DIFOdelbegin}{\DIFdelbegin} %DIF PREAMBLE
+\LetLtxMacro{\DIFOdelend}{\DIFdelend} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFaddbegin}{\DIFOaddbegin \let\includegraphics\DIFaddincludegraphics} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFaddend}{\DIFOaddend \let\includegraphics\DIFOincludegraphics} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFdelbegin}{\DIFOdelbegin \let\includegraphics\DIFdelincludegraphics} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFdelend}{\DIFOaddend \let\includegraphics\DIFOincludegraphics} %DIF PREAMBLE
+\LetLtxMacro{\DIFOaddbeginFL}{\DIFaddbeginFL} %DIF PREAMBLE
+\LetLtxMacro{\DIFOaddendFL}{\DIFaddendFL} %DIF PREAMBLE
+\LetLtxMacro{\DIFOdelbeginFL}{\DIFdelbeginFL} %DIF PREAMBLE
+\LetLtxMacro{\DIFOdelendFL}{\DIFdelendFL} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFaddbeginFL}{\DIFOaddbeginFL \let\includegraphics\DIFaddincludegraphics} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFaddendFL}{\DIFOaddendFL \let\includegraphics\DIFOincludegraphics} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFdelbeginFL}{\DIFOdelbeginFL \let\includegraphics\DIFdelincludegraphics} %DIF PREAMBLE
+\DeclareRobustCommand{\DIFdelendFL}{\DIFOaddendFL \let\includegraphics\DIFOincludegraphics} %DIF PREAMBLE
+%DIF COLORLISTINGS PREAMBLE %DIF PREAMBLE
+\RequirePackage{listings} %DIF PREAMBLE
+\RequirePackage{color} %DIF PREAMBLE
+\lstdefinelanguage{DIFcode}{ %DIF PREAMBLE
+%DIF DIFCODE_UNDERLINE %DIF PREAMBLE
+  moredelim=[il][\color{red}\sout]{\%DIF\ <\ }, %DIF PREAMBLE
+  moredelim=[il][\color{blue}\uwave]{\%DIF\ >\ } %DIF PREAMBLE
+} %DIF PREAMBLE
+\lstdefinestyle{DIFverbatimstyle}{ %DIF PREAMBLE
+	language=DIFcode, %DIF PREAMBLE
+	basicstyle=\ttfamily, %DIF PREAMBLE
+	columns=fullflexible, %DIF PREAMBLE
+	keepspaces=true %DIF PREAMBLE
+} %DIF PREAMBLE
+\lstnewenvironment{DIFverbatim}{\lstset{style=DIFverbatimstyle}}{} %DIF PREAMBLE
+\lstnewenvironment{DIFverbatim*}{\lstset{style=DIFverbatimstyle,showspaces=true}}{} %DIF PREAMBLE
+%DIF END PREAMBLE EXTENSION ADDED BY LATEXDIFF
+
+\begin{document}
+
+\maketitle
+\appendix
+
+
+
+\section{Mathematical details of HMM reformulation}
+\label{mathematical-details-of-hmm-reformulation}
+
+
+
+\subsection{Rearrangement of the forward recursion}
+\label{apx:fwd}
+
+Starting with \eqref{eq:raw_forward} from the main paper, we have
+\begin{align}
+	\tilde{\alpha}_{\cdot i}^{\ell} & \gets \theta^{\ell}_{\cdot i}  \left( \left(1-r^{\ell-1}\right) \tilde{\alpha}_{\cdot i}^{\ell-1} + r^{\ell-1} F_i^{\ell-1}  \Pi_{\cdot i} \right) \nonumber \\
+	\frac{\tilde{\alpha}_{\cdot i}^{\ell}}{ F_i^{\ell-1}} & \gets \theta^{\ell}_{\cdot i} \left( \left(1-r^{\ell-1}\right) \frac{1}{{ F_i^{\ell-1}}}\tilde{\alpha}_{\cdot i}^{\ell-1} + r^{\ell-1} \Pi_{\cdot i} \right) \nonumber \\
+	\frac{\tilde{\alpha}_{\cdot i}^{\ell}}{ F_i^{\ell-1}} & \gets \theta^{\ell}_{\cdot i} \left( \left(1-r^{\ell-1}\right) \frac{F_i^{\ell-2}}{{ F_i^{\ell-1}}} \frac{\tilde{\alpha}_{\cdot i}^{\ell-1}}{F_i^{\ell-2}} + r^{\ell-1} \Pi_{\cdot i} \right) \nonumber \\
+	\alpha_{\cdot i}^{\ell} & \gets \theta^{\ell}_{\cdot i} \left( \left(1-r^{\ell-1}\right) \frac{F_i^{\ell-2}}{{ F_i^{\ell-1}}} \alpha_{\cdot i}^{\ell-1} + r^{\ell-1} \Pi_{\cdot i} \right) \nonumber
+\end{align}
+
+Since
+\(\frac{F_i^{\ell-2}}{F_i^{\ell-1}} = \left( \frac{ \underset{j}{\sum} \tilde{\alpha}_{ji}^{\ell-1}}{ F_i^{\ell-2}}\right)^{-1} = \left( \underset{j}{\sum} \alpha_{ji}^{\ell-1} \right)^{-1}\),
+we arrive at \eqref{eq:fwd1}.
+
+
+
+\subsection{Rearrangement of the backward recursion}
+\label{apx:bck}
+
+Starting with \eqref{eq:raw_backward} we have
+
+\begin{align}
+	\tilde{\beta}_{\cdot i}^{\ell} &\gets \left( 1- r^{\ell}\right) \tilde{\beta}_{i\cdot}^{\ell+1} \theta^{\ell+1}_{\cdot i} + r^{\ell} G^\ell \nonumber \\
+	\frac{\tilde{\beta}_{\cdot i}^{\ell}}{G^{\ell}} &\gets \left( 1- r^{\ell}\right) \frac{1}{G^{\ell}} \tilde{\beta}_{\cdot i}^{\ell+1} \theta^{\ell+1}_{\cdot i} + r^\ell \nonumber \\
+	\frac{\tilde{\beta}_{\cdot i}^{\ell}}{ G^{\ell}} &\gets \left( 1- r^{\ell}\right) \frac{G^{\ell+1}}{G^{\ell}} \frac{\tilde{\beta}_{\cdot i}^{\ell+1}}{G^{\ell+1}} \theta^{\ell+1}_{\cdot i} + r^\ell \nonumber \\
+	\beta_{\cdot i}^{\ell} &\gets \left( 1- r^{\ell}\right) \frac{G^{\ell+1}}{ G^{\ell}} \beta_{\cdot i}^{\ell+1} \theta^{\ell+1}_{\cdot i} + r^\ell \nonumber
+\end{align}
+
+Since
+\(\frac{G^{\ell+1}}{ G^{\ell}} = \left( \frac{\underset{j}{\sum} \tilde{\beta}_{ji}^{\ell+1}\theta_{ji}^{\ell+1} \Pi_{ji} }{G_i^{\ell+1}}\right)^{-1} = \left(\underset{j}{\sum} \beta_{ji}^{\ell+1}\theta_{ji}^{\ell+1} \Pi_{ji}\right)^{-1}\),
+we arrive at \eqref{eq:bck1}.
+
+\subsection[Numerical considerations: avoiding NaN]{Numerical considerations: avoiding \texttt{NaN}}
+\label{apx:nan}
+
+The forward and backward recursions as written in \eqref{eq:fwd1} and \eqref{eq:bck1} are susceptible to three main categories of numerical instability: element underflow, total underflow, and overflow.
+By element underflow, we refer to the situation where a subset of elements in \(\alpha_{\cdot i}^\ell\) or \(\beta_{\cdot i}^\ell\) underflow to zero for a given \(\ell\).
+This becomes more likely to occur if there are zero (or near zero) entries in \(\rho\), \(\mu\), or \(\Pi\) (excepting the diagonal, which must be zero).
+Element underflow effectively reinitializes the recursion for the donor haplotypes corresponding to the elements where the underflow occurs, causing the HMM to lose track of how similar those donor haplotypes are
+to the recipient haplotype leading up to the variant where the underflow occurs.
+While element underflow results in a loss of information about the relative likelihood of the recipient copying from genetically distant donors, the relative likelihood of copying similar donors is retained.
+Element underflow will not cause either recursion to fail.
+
+However, underflow can cause catastrophic failure if it causes either:
+\[ \underset{j}{\sum} \alpha_{ji}^{\ell-1} \qquad\qquad \mbox{or} \qquad\qquad \underset{j}{\sum} \beta_{ji}^{\ell+1}\theta_{ji}^{\ell+1} \Pi_{ji}\]
+to evaluate to zero at a given \(\ell\), which we refer to as total underflow.
+In these cases, entire columns of \texttt{fwd\$alpha} or \texttt{bck\$beta} will be \texttt{NaN} (except for the diagonal which is always 0).
+While this means that the user cannot continue the recursion with the current set of haplotypes and parameters, total underflow is easy to catch since the \texttt{NaN}s will usually break downstream pipelines.
+
+Internally, \pkg{kalis} takes several measures to help reduce the risk of total underflow.
+For example, \pkg{kalis} calculates \(\theta_{\cdot i}^{\ell}\) as
+\[
+	\theta_{\cdot i}^{\ell} = \left(1 - H_{\cdot i}^{\ell}\right) \left(1-2\mu\right) + \mu .
+\]
+
+Note, that even for \(\mu\) well below machine precision, this sets \(\theta_{j i}^{\ell}\) to \(\mu\) for haplotypes \(j,i\) that mismatch at \(\ell\) rather than setting \(\theta_{j i}^{\ell}\) to 0.
+This in turn helps prevent \(\theta_{\cdot i}^{\ell}\) from being set to zero, resulting in total underflow.
+Despite the precautions taken in \pkg{kalis}, we recommend that users remove private mutations that appear on only one haplotype (singletons) before loading haplotypes into the \pkg{kalis} cache.
+These private mutations tend not to be informative about the relationships between haplotypes and removing them can help prevent total underflow, especially at variants with small \(\mu\).
+
+In addition to removing singletons, users may consider avoiding parameter choices that place many zero (or near zero) entries in \(\rho\), \(\mu\), or \(\Pi\) to help prevent or remedy total underflow.
+Setting some entries of \(\rho\) zero, for a non-recombining segment of genome, or \(\mu\) to zero, for very important variants that all potential donors must share with a recipient, is often biologically meaningful and should be safe in most applications.
+However, setting entries of \(\Pi\) to zero requires slightly more caution because this can easily cause total underflow if the prior copying probabilities strongly conflict with the observed haplotype similarity over a genomic interval (prior-likelihood mismatch).
+Furthermore, zero (or very near zero) prior copying probabilities can cause \(\underset{j}{\sum} \beta_{ji}^{\ell+1}\theta_{ji}^{\ell+1} \Pi_{ji}\) to evaluate to \texttt{Inf} which we refer to as total overflow when there is prior-likelihood mismatch.
+Like total underflow, total overflow is easily detectable since it leads to \texttt{NaN}s on the next backward iteration.
+The forward recursion is not susceptible to total overflow because every \(\alpha_{ji}^\ell\) is less than or equal to 2\footnote[2]{
+  In a different implementation, one may be tempted to divide both sides of the forward recursion and backward recursion by \(\rho\).
+  This would help prevent underflow by allowing \(\alpha\) to make full use of the range of double precision numbers and have the added benefit of slightly increased performance (by eliminating a multiply AVX instruction).
+  However, rescaling by \(\rho\) makes it impossible to tackle problems where \(\rho^\ell\) is zero for some \(\ell\).
+  Even if we restrict \(\rho^\ell > 0\), the rescaling makes the forward recursion susceptible to total overflow since it raises the upper bound on \(\alpha\) from 2 to \(1 + \left( \underset{\ell}{\min}\,\rho^\ell \right)^{-1}\).
+	Similarly, it makes the backward recursion more susceptible to overflow by raising the upper bound on \(\beta\) from \(1 + \left( \underset{j,i}{\min}\,\Pi_{ji} \right)^{-1}\) to \(1 + \left( \underset{\ell,j,i}{\min}\,\rho^\ell \Pi_{ji} \right)^{-1}\).}.
+Using prior copying probabilities that reflect the observed haplotypic similarity or simply resorting to uniform prior copying probabilities for \(\Pi\) (the default) should be safe in most applications.
+
+
+
+\section{Installation help}
+\label{installation-help}
+
+There are two key features that can only be set at package compile time: the SIMD instruction set to target, and how deeply to unroll the innermost loop in the \pkg{kalis} core.
+This appendix explains how to set these options at compile time.
+
+
+
+\subsection{Manually controlling instruction set}
+\label{apx:compileis}
+
+When compiling \pkg{kalis} it will by default attempt to auto-detect the best available SIMD instruction set to use.
+However, if this auto-detection fails, or if you wish to force the use of an inferior (or no) SIMD instructions then you can use a compiler flag to manually direct \pkg{kalis}.
+
+The supported flags are:
+
+%\begin{\texttt{Chunk}
+\begin{longtable}{ll}
+	\toprule
+	\textbf{Flag} & \textbf{Instruction sets used} \\
+	\midrule
+	\texttt{NOASM} & Forces pure C, no special instruction set intrinsics used \\
+	\texttt{AVX2} & Enables intrinsics: AVX2, AVX, SSE4.1, SSE2, FMA and BMI2 \\
+	\texttt{AVX512} & Enables intrinsics: AVX-512, AVX2, SSE2 and BMI2 \\
+	\texttt{NEON} & Enables intrinsics: ARM NEON and NEON FMA \\
+	\bottomrule
+\end{longtable}
+%\end{\texttt{Chunk}
+
+They are used by setting the configure variable \texttt{FLAG=1}, where \texttt{FLAG} is one of the options in the above table.
+For example, to force the use of no special instruction set whilst still compiling against the native architecture, one would compile with:
+
+\begin{verbatim}
+remotes::install_github("louisaslett/kalis", configure.vars =
+        c(kalis = "PKG_CFLAGS='-march=native -mtune=native -O3' NOASM=1"))
+\end{verbatim}
+
+%\noindent
+%or pulling the source from CRAN,
+%
+%\begin{verbatim}
+%install.packages("kalis", type = "source", configure.vars =
+%        c(kalis = "PKG_CFLAGS='-march=native -mtune=native -O3' NOASM=1"))
+%\end{verbatim}
+
+Note that the most restrictive instruction set is all that need be defined: that is, the availability of AVX2 implies the availability of the other listed instruction sets, and likewise for AVX-512 and NEON.
+Hence, there is no need to verify the availability of other instruction sets.
+
+On a Mac, you can check if you have any of these instruction sets by running the following at a Terminal, the lines ending \texttt{1} indicating support (missing lines or those ending \texttt{0} indicate no support):
+
+\begin{verbatim}
+sysctl -a | egrep "^hw.optional.(avx2|avx5|neon)+"
+\end{verbatim}
+
+On most flavours of Linux you can check if you have AVX2 or AVX-512 instruction sets by running (no output indicates no support, otherwise look for the highlighted \texttt{avx} text):
+
+\begin{verbatim}
+egrep --color -i "avx[^ ]*" /proc/cpuinfo
+\end{verbatim}
+
+On most flavours of Linux you can check if you have NEON instruction set by running (no output indicates no support):
+
+\begin{verbatim}
+egrep --color -i "(neon|asimd[^ ]*)" /proc/cpuinfo
+\end{verbatim}
+
+
+
+\subsection{Core loop unrolling}
+\label{apx:unroll}
+
+Loop unrolling can improve performance for critical deeply nested loops.
+This occurs either because for a sufficiently optimised loop, the loop increment count comprises a substantial proportion of the computation of each iteration, or because by unrolling the compiler (and CPU at run time) can reason about between iteration dependency better leading to better instruction ordering and potential instruction level parallelism.
+
+By default \pkg{kalis} will unroll loops to depth 4, which we have tested to be a reasonable default for many machines and problem sizes.
+However, the optimal value will vary both by the particulars of a CPU/memory architecture and by problem size (in \(N\)).
+Therefore, if \pkg{kalis} represents a performance critical section of your workflow, we recommend running real benchmarks for a variety of unroll depths on a problem of your target size on the machine you will deploy to.
+
+In order to set the unroll depth, you need to pass the \texttt{UNROLL} configure variable.
+Note that only powers of 2 are supported.
+
+For example, to double the default unroll depth to 8, use the following at compile time:
+
+\begin{verbatim}
+remotes::install_github("louisaslett/kalis", configure.vars =
+        c(kalis = "PKG_CFLAGS='-march=native -mtune=native -O3' UNROLL=8"))
+\end{verbatim}
+
+%\noindent
+%or pulling the source from CRAN,
+%
+%\begin{verbatim}
+%install.packages("kalis", type = "source", configure.vars =
+%        c(kalis = "PKG_CFLAGS='-march=native -mtune=native -O3' UNROLL=8"))
+%\end{verbatim}
+
+Note that the unroll flag and the target SIMD instruction set flags of \Cref{apx:compileis} can be set together with a space separator between them.
+
+
+
+\section{HDF5 file format}
+\label{apx:hdf5}
+
+HDF5 \cite{hdf5} is a format designed to handle large quantities of data in an efficient manner.
+\pkg{kalis} supports loading data from HDF5 in the format specified here, with the option to depend on either CRAN package \pkg{hdf5r} \cite{hdf5r} or Bioconductor \cite{bioc} package \pkg{rhdf5} \cite{rhdf5}.
+
+For HDF5 files, \pkg{kalis} expects a 2-dimensional object named \texttt{/haps} at the root level of the HDF5 file.
+Haplotypes should be stored in the slowest changing dimension as defined in the HDF5 specification (\textbf{note:} different languages treat this as rows or columns: it is `row-wise' in the \proglang{C} standard specification, or `column-wise' in the \pkg{rhdf5} specification).
+If the haplotypes are stored in the other dimension then simply supply the argument \texttt{transpose\ =\ TRUE} when calling \texttt{CacheHaplotypes()}, although this may incur a small penalty in the time it takes to load into cache.
+If you are unsure of the convention of the language in which you created the HDF5 file, then the simplest approach is to simply load the data with \texttt{CacheHaplotypes()} specifying only the HDF5 file name and then confirm that the number of haplotypes and their length have not been exchanged in the diagnostic output which \pkg{kalis} prints.
+
+The format also allows named IDs for both haplotypes and variants in the 1-dimensional objects \texttt{/hap.ids} and \texttt{/loci.ids}, also in the root level of the HDF5 file.
+
+
+
+\subsection[Working with this format in R]{Working with this format in \proglang{R}}
+\label{apx:writehdf5}
+
+Since the format described above is not standard, \pkg{kalis} provides two utility functions for working with it.
+\texttt{WriteHaplotypes()} enables using \proglang{R} to create the requisite format from a standard matrix, and \texttt{ReadHaplotypes()} allows reading into \proglang{R} (rather than the internal \pkg{kalis} cache) from this format.
+
+Assume that you have imported your haplotype data into the \proglang{R} variable \texttt{myhaps}, with variants in rows and haplotypes in columns (so that \texttt{myhaps} is an \(L \times N\) matrix consisting of only \texttt{0} or \texttt{1} entries).
+Then to write this out to the HDF5 file \texttt{\textasciitilde{}/myhaps.h5},
+
+%\begin{\texttt{Chunk}
+\begin{verbatim}
+R> WriteHaplotypes("~/myhaps.h5", myhaps)
+\end{verbatim}
+%\end{\texttt{Chunk}
+
+You may additionally wish to store the names of haplotypes or variants alongside the haplotype matrix for self documentation purposes.
+Assume you have defined \texttt{hapnm}, a character vector of length \(N\), and \texttt{varnm}, a character vector of length \(L\), then you may instead call,
+
+%\begin{\texttt{Chunk}
+\begin{verbatim}
+R> WriteHaplotypes("~/myhaps.h5", myhaps,
+                   hap.ids = hapnm, loci.ids = varnm)
+\end{verbatim}
+%\end{\texttt{Chunk}
+
+You can verify the content by reading this file back into R directly as:
+
+%\begin{\texttt{Chunk}
+\begin{verbatim}
+R> myhaps_file <- ReadHaplotypes("~/myhaps.h5")
+\end{verbatim}
+%\end{\texttt{Chunk}
+
+You should find \texttt{all(myhaps\ ==\ myhaps\_file)} is \texttt{TRUE}.
+For large problems, you may want to read just one named variant.
+For example, imagine you had saved the variant names using the second \texttt{WriteHaplotypes()} function call above, and that one of those variant names was \texttt{"rs234"} (genetic variant associated with lactase persistence), then you can read all haplotypes for this variant with,
+
+%\begin{\texttt{Chunk}
+\begin{verbatim}
+R> lactase_haps <- ReadHaplotypes("~/myhaps.h5",
+                                  loci.ids = "rs234")
+\end{verbatim}
+%\end{\texttt{Chunk}
+
+Once you are happy the HDF5 file is setup correctly, you can restart your \proglang{R} session to ensure all memory is cleared and then load your haplotype data directly to the optimised \pkg{kalis} cache by passing the file name,
+
+%\begin{\texttt{Chunk}
+\begin{verbatim}
+R> CacheHaplotypes("~/myhaps.h5")
+\end{verbatim}
+%\end{\texttt{Chunk}
+
+
+\section{Benchmark comparison details}
+\label{benchmark-details}
+
+We consider two benchmarking experiments to compare the implementation of the forward and backward algorithms in \pkg{kalis} to those in Relate.
+
+As mentioned in the main paper, Relate is designed to target the derived allele haplotype copying model where there is asymmetry in the emission kernel based on the derived allele orientation of each variant.
+When painting a given recipient haplotype as a mosaic of donor haplotypes, this allows Relate to effectively skip all variants where a recipient haplotype does not carry the derived allele.
+By propagating over different subsets of variants in this way, the Relate paper reported an order-of-magnitude speed up (\textit{``In practice this can make the application of the algorithm $>10$ times faster even for modest samples of a few thousand individuals,''} end \S3.4 of supplementary note in \cite{speidel}).
+However, this approach cannot be applied to the original LS model because the emission kernel's symmetry effectively requires every variant to be accounted for when painting each recipient haplotype.
+While \pkg{kalis} was optimized for the original LS model, the derived allele copying model is available using the flag \texttt{use.speidel = TRUE} (see the \texttt{Parameters()} function).
+Note that even with the derived allele copying model activated, \pkg{kalis} will still visit every variant for every recipient haplotype; in principle \pkg{kalis} could also employ the same optimisation as Relate and visit only derived sites for every recipient haplotype.
+We consider this an exciting avenue of future research.
+
+By default Relate visits an internally determined schedule of sites at which to output forward and backward probabilities, to eliminate the IO time required we modified one of the binary parameter files produced by Relate to run painting without any outputting any intermediate sites.
+
+Hence, we designed two benchmarking experiments.
+The first comparing speed while targeting the derived allele copying model; the second, the original LS model.
+Since the Relate license bars modification of the source code, we could not simply inject timing code around the forward and backward recursions.
+
+For the purposes of benchmarking we created two synthetic datasets from the 1000 Genomes data used in our lactase example (5008 haplotypes observed at 29193 variants), \texttt{lct0} and \texttt{lct1}.
+To generate \texttt{lct0}, we replaced the last haplotype in the dataset with all 0s except for a single 1 at both ends.
+We then generated \texttt{lct1} by again modifying the last haplotype to be all 1s except for a single 0 at the middle variant (needed to overcome a restriction in Relate whereby not all variants may be 1 for a single haplotype).
+This facilitated benchmarking because in \texttt{lct1} all of the 1s in the last haplotype forces Relate to visit all variants (except for the middle variant) when painting the last haplotype.
+Hence, taking the difference between the run time for Relate on \texttt{lct0} versus \texttt{lct1} provides an estimate of the amount of time required for Relate's forward and backward algorithm to iterate over all variants for a single haplotype.
+
+In both cases we used the same recombination map, with very high spikes inserted between the first and second variant as well as between the last and penultimate variant.
+These spikes forced the forward and backward copying probabilities obtained at each end of the haplotypes to be identical when running Relate on \texttt{lct0} and \texttt{lct1}.
+This is important because Relate uses an on-the-fly compression method when writing the forward and backward probabilities to disk, and this recombination map ensures the same data is compressed in both runs eliminating a potential source of bias.
+Finally, we also overrode the default file writing schedule so that only probabilities at either end of the haplotypes were outputted to minimise I/O.
+
+First, the \texttt{lct0} run in Relate was performed 10 times, with mean run time 234.4937 secs, 95\% CI $(234.4141, 234.5733)$.
+Performing the analagous experiment for \texttt{lct0} in \pkg{kalis} corresponds to propagating the forward and backward algorithms over the entire chromosome for all $N$ haplotypes.
+In \pkg{kalis} this yielded a mean run time 20.5058 secs, 95\% CI $(20.5009, 20.5108)$.
+It should be noted that \pkg{kalis} automatically took advantage of the 48 core CPU, whilst Relate does not do multi-threading of forward or backward pass.
+With the roughly linear scaling, this means if forced to run single core \pkg{kalis} would be about $4\times$ slower, the difference arising because Relate skips many variants by default.
+\DIFdelbegin \DIFdel{Thus, in the Relate-native setting, Relate does indeed perform best.
+}\DIFdelend 
+
+We next explore what advantage the software engineering in \pkg{kalis} provides when targetting the original LS model under which all sites must be visited.
+To do so we examine the difference between \texttt{lct0} and \texttt{lct1} runs under Relate and compare it to \pkg{kalis} painting a single haplotype (the last one) for \texttt{lct1}.
+The experiments were run 10 times resulting in a mean time of 234.4937 secs for \texttt{lct0} and 235.2122 secs for \texttt{lct1}, with unpaired 95\% confidence interval for the difference of $(0.6336,0.8034)$ with mean 0.7185 secs.
+This represents our estimate of the amount of time required for Relate's forward and backward algorithm to iterate over all variants for a single haplotype (specifically, the last haplotype in \texttt{lct1}).
+This compares to \pkg{kalis} taking a mean run time of 0.1236 secs with 95\% confidence interval $(0.1216, 0.1257)$.
+This corresponds to an average $5.8\times$ improvement under \pkg{kalis}.
+\DIFaddbegin 
+
+\DIFaddend Thus, in the \DIFaddbegin \DIFadd{Relate-native setting Relate performs better than }\DIFaddend \pkg{kalis}\DIFaddbegin \DIFadd{, while in the }\pkg{kalis}\DIFaddend -native setting \DIFdelbegin \DIFdel{, }\DIFdelend \pkg{kalis} \DIFdelbegin \DIFdel{does indeed perform best}\DIFdelend \DIFaddbegin \DIFadd{performs better than Relate}\DIFaddend .
+
+
+\bibliographystyle{acm}
+\bibliography{../kalis}
+
+\end{document}
